@@ -17,22 +17,27 @@ import matplotlib.pyplot as plt
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 #%%
-def plot_learning_curve(loss_record, title=''):
-    ''' Plot learning curve of your DNN (train & dev loss) '''
+# 畫出學習曲線
+
+def plot_learning_curve(loss_record, title):
     total_steps = len(loss_record['train'])
     x_1 = range(total_steps)
-    x_2 = x_1[::len(loss_record['train']) // len(loss_record['dev'])] # (0, 27000, 9) => len(loss_record['train']) // len(loss_record['dev']) == 9
+    x_2 = x_1[::len(loss_record['train']) // len(loss_record['dev'])] # [0, 27000, 9] => len(loss_record['train']) // len(loss_record['dev']) == 9
+    
+    print(len(loss_record['train']))
+    print(len(loss_record['dev']))
 
     plt.figure(figsize=(6, 4))
     plt.plot(x_1, loss_record['train'], c='tab:red', label='train')
     plt.plot(x_2, loss_record['dev'], c='tab:cyan', label='dev')
     plt.ylim(0.0, 5.)
     plt.xlabel('Training steps')
-    plt.ylabel('MSE loss')
+    plt.ylabel('Loss')
     plt.title('Learning curve of {}'.format(title))
     plt.legend()
     plt.show()
 
+# 畫出預測曲線
 
 def plot_pred(dv_set, model, device, lim=35., preds=None, targets=None):
     ''' Plot prediction of your DNN '''
@@ -187,11 +192,11 @@ def train(tr_set, dv_set, model, device):
 
 
         # Validition
-        dev_mse = dev(dv_set, model, device)
+        valid_loss = valid(dv_set, model, device)
 
-        # 比上一筆 loss 小才存 model
-        if dev_mse < min_mse:
-            min_mse = dev_mse
+        # Early Stop : 比上一筆最小的 loss 還小才存 model
+        if valid_loss < min_mse:
+            min_mse = valid_loss
             print('Saving model (epoch = {:4d}, loss = {:.4f})'.format(epoch + 1, min_mse))
             torch.save(model.state_dict(), 'model.pth')  # Save model to specified path
             early_stop_cnt = 0
@@ -199,7 +204,7 @@ def train(tr_set, dv_set, model, device):
             early_stop_cnt += 1
 
         epoch += 1
-        loss_record['dev'].append(dev_mse)
+        loss_record['dev'].append(valid_loss)
         if early_stop_cnt > 200: # 超過 500 次沒有筆前面的 loss 還小就停止 training
             break
 
@@ -209,7 +214,7 @@ def train(tr_set, dv_set, model, device):
 #%%
 # Validation
 
-def dev(dv_set, model, device):
+def valid(dv_set, model, device):
     loss_fn = nn.MSELoss()
     model.eval()                                                 # set model to evalutation mode
     total_loss = 0
@@ -267,6 +272,7 @@ plot_pred(dv_set, model, device)
 #%%
 # 測試 Testing Data
 # 存成 Kaggle 形式
+
 
 def save_pred(preds, df, file):
     ''' Save predictions to specified file '''
