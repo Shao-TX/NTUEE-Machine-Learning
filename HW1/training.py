@@ -13,7 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 #%%
-
+# Set Random Seed
 def set_seed(myseed = 45215):
     np.random.seed(myseed)
 
