@@ -13,17 +13,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 #%%
-# 畫出學習曲線
 
-def set_seed():
-    myseed = 45215  # set a random seed for reproducibility
+def set_seed(myseed = 45215):
+    np.random.seed(myseed)
+
+    torch.manual_seed(myseed)
+    torch.cuda.manual_seed(myseed)
+    torch.cuda.manual_seed_all(myseed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    np.random.seed(myseed)
-    torch.manual_seed(myseed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(myseed)
-
+    
+    
+# 畫出學習曲線
 def plot_learning_curve(loss_record, title=''):
     total_steps = len(loss_record['train'])
     x_1 = range(total_steps)
@@ -208,7 +209,6 @@ def train(train_data, valid_data, model, epoch, device, saving_name):
             loss = loss_fn(pred, target)          # compute loss
             loss.backward()                       # compute gradient (backpropagation)
             optimizer.step()                      # update model with optimizer
-            print(loss)
             loss_record['train'].append(loss.detach().cpu().item()) 
             # detach : 阻斷 Backpropagation
             # cpu : 有些動作需在 cpu 中才能執行(ex : numpy)
@@ -233,7 +233,7 @@ def train(train_data, valid_data, model, epoch, device, saving_name):
 
     print('Finished training after {} epochs'.format(epoch))
     return min_loss, loss_record
-    
+
 #%%
 if __name__ == "__main__" :
     # Set Random Seed
