@@ -75,14 +75,17 @@ def plot_pred(valid_data, model, device, lim=35., preds=None, targets=None):
 #%%
 # Dataset
 class COVID19Dataset(Dataset):
-    def __init__(self, path, mode = 'train',target_only=False):
+    def __init__(self, path, mode = 'train',target_only=True):
         self.mode = mode
 
         data = pd.read_csv(path)
         data = data.iloc[:, 1:] # 不取編號(第一行)
         data = np.array(data) # Pandas to Numpy
 
-        feats = list(range(93))
+        if not target_only:
+            feats = list(range(93))
+        else:
+            feats = [75, 57, 42, 60, 78, 43, 61, 79, 40, 58, 76, 41, 59, 77] # Feature Select
 
         if mode == 'test':
             # Testing data
@@ -130,7 +133,7 @@ class COVID19Dataset(Dataset):
 
 #%%
 # DataLoader
-def prep_dataloader(path, mode, batch_size, n_jobs=0, target_only=False):
+def prep_dataloader(path, mode, batch_size, n_jobs=0, target_only=True):
     dataset = COVID19Dataset(path, mode = mode, target_only = target_only)  # Construct dataset
     
     dataloader = DataLoader(
@@ -252,8 +255,8 @@ if __name__ == "__main__" :
     EPOCH = 3000
 
     # Load Dataset
-    train_data = prep_dataloader(TRAIN_PATH, mode = 'train', batch_size = BATCH_SIZE, target_only = False)
-    valid_data = prep_dataloader(TRAIN_PATH, mode = 'valid', batch_size = BATCH_SIZE, target_only = False)
+    train_data = prep_dataloader(TRAIN_PATH, mode = 'train', batch_size = BATCH_SIZE, target_only = True)
+    valid_data = prep_dataloader(TRAIN_PATH, mode = 'valid', batch_size = BATCH_SIZE, target_only = True)
 
     # Load Model
     model = Net(train_data.dataset.dim).to(device)
