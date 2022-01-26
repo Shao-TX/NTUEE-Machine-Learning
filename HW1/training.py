@@ -1,5 +1,6 @@
 #%%
 # Pytorch
+from operator import index
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
@@ -88,9 +89,9 @@ class COVID19Dataset(Dataset):
             
             # Splitting training data into train & dev sets
             if mode == 'train':
-                indices = [i for i in range(len(data)) if i % 27 != 0] # 2430 筆
+                indices = [i for i in range(len(data)) if i % 15 != 0] # 2430 筆
             elif mode == 'valid':
-                indices = [i for i in range(len(data)) if i % 27 == 0] # 270 筆
+                indices = [i for i in range(len(data)) if i % 15 == 0] # 270 筆
 
             self.data = torch.FloatTensor(data[indices]) # Convert data into PyTorch tensors
             self.target = torch.FloatTensor(target[indices])
@@ -126,7 +127,7 @@ def prep_dataloader(path, mode, batch_size, n_jobs=0, target_only=False):
                             dataset, 
                             batch_size,
                             shuffle=(mode == 'train'), # 如果使用 train 就 True 否則 False
-                            drop_last=False,
+                            drop_last=True,
                             num_workers=n_jobs, 
                             pin_memory=True
                         ) # Construct dataloader
@@ -139,10 +140,10 @@ class Model(nn.Module):
         super(Model, self).__init__()
 
         self.main = nn.Sequential(
-            nn.Linear(input_dim, 64),
-            nn.BatchNorm1d(64),
+            nn.Linear(input_dim, 128),
+            nn.BatchNorm1d(128),
             nn.ReLU(),
-            nn.Linear(64, 1)
+            nn.Linear(128, 1)
         )
 
     def forward(self, x):
@@ -158,10 +159,10 @@ def train(tr_set, dv_set, model, device):
 
     # Setup optimizer
     loss_fn = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr = 0.0001, weight_decay = 0.01) # 加入 L2 Regulization(必定使 training loss 變差)
+    optimizer = optim.Adam(model.parameters(), lr = 0.001, weight_decay = 0.01) # 加入 L2 Regulization(必定使 training loss 變差)
 
     min_mse = 1000
-    loss_record = {'train': [], 'dev': []}      # for recording training loss
+    loss_record = {'train': [], 'dev': []}        # for recording training loss
     early_stop_cnt = 0
     epoch = 0
 
@@ -199,7 +200,7 @@ def train(tr_set, dv_set, model, device):
 
         epoch += 1
         loss_record['dev'].append(dev_mse)
-        if early_stop_cnt > 500: # 超過 500 次沒有筆前面的 loss 還小就停止 training
+        if early_stop_cnt > 200: # 超過 500 次沒有筆前面的 loss 還小就停止 training
             break
 
     print('Finished training after {} epochs'.format(epoch))
@@ -207,30 +208,48 @@ def train(tr_set, dv_set, model, device):
 
 #%%
 # Validation
+
 def dev(dv_set, model, device):
     loss_fn = nn.MSELoss()
-    model.eval()                                # set model to evalutation mode
+    model.eval()                                                 # set model to evalutation mode
     total_loss = 0
-    for data, target in dv_set:                 # iterate through the dataloader
+    for data, target in dv_set:                                  # iterate through the dataloader
 
         data = data.to(device)
-        target = target.to(device)              # move data to device (cpu/cuda)
+        target = target.to(device)                               # move data to device (cpu/cuda)
 
-        with torch.no_grad():                   # disable gradient calculation
+        with torch.no_grad():                                    # disable gradient calculation
             pred = model(data)                                   # forward pass (compute output)
             loss = loss_fn(pred, target)                         # compute loss
         
-        total_loss += loss.detach().cpu().item() * len(data)  # accumulate loss
-    total_loss = total_loss / len(dv_set.dataset)              # compute averaged loss
+        total_loss += loss.detach().cpu().item() * len(data)     # accumulate loss
+    total_loss = total_loss / len(dv_set.dataset)                # compute averaged loss
 
     return total_loss
 
 #%%
+# Testing
+
+def test(tt_set, model, device):
+    model.eval()                                         # set model to evalutation mode
+    preds = []
+    for x in tt_set:                                     # iterate through the dataloader
+
+        x = x.to(device)                                 # move data to device (cpu/cuda)
+
+        with torch.no_grad():                            # disable gradient calculation
+            pred = model(x)                              # forward pass (compute output)
+            preds.append(pred.detach().cpu().numpy().item())   # collect prediction
+    return preds
+
+#%%
 # Load Dataset
 tr_path = 'ml2021spring-hw1\covid.train.csv'  # path to training data
+tt_path = 'ml2021spring-hw1\covid.test.csv'   # path to testing data
 
-tr_set = prep_dataloader(tr_path, 'train', batch_size = 270, target_only = False)
-dv_set = prep_dataloader(tr_path, 'valid', batch_size = 270, target_only = False)
+tr_set = prep_dataloader(tr_path, 'train', batch_size = 128, target_only = False)
+dv_set = prep_dataloader(tr_path, 'valid', batch_size = 128, target_only = False)
+tt_set = prep_dataloader(tt_path, 'test',  batch_size = 1, target_only = False)
 
 # Load Model
 model = Model(tr_set.dataset.dim).to(device)
@@ -243,6 +262,32 @@ model_loss, model_loss_record = train(tr_set, dv_set, model, device)
 #%%
 plot_learning_curve(model_loss_record, title='deep model')
 
-# %%
+#%%
 plot_pred(dv_set, model, device)
-# %%
+#%%
+# 測試 Testing Data
+# 存成 Kaggle 形式
+
+def save_pred(preds, df, file):
+    ''' Save predictions to specified file '''
+    print('Saving results to {}'.format(file))
+    for i, p in enumerate(preds):
+        i+=1 # Pandas 是從 1 開始(但 i 等於 0)
+        df.loc[i] = [i-1, p]
+
+    df['id'] = df['id'].astype('Int32') # 因為 csv 是由 String 存入，因此需轉成 Int32 才能上傳 Kaggle
+    df.to_csv(file + ".csv",
+            index = False)
+
+#%%
+del model
+model = Model(tt_set.dataset.dim).to(device)
+ckpt = torch.load('model.pth', map_location='cpu')  # Load your best model
+model.load_state_dict(ckpt)
+
+df = pd.DataFrame([], columns = ['id', 'tested_positive'])
+
+preds = test(tt_set, model, device)  # predict COVID-19 cases with your model
+save_pred(preds, df,'submission')         # save prediction file to pred.csv
+
+#%%
