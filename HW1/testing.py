@@ -42,13 +42,13 @@ if __name__ == "__main__":
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     # Model Path
-    model_path = 't.pth'
+    model_path = 'Feature14_model.pth'
 
     # Data Path
     TEST_PATH  = 'ml2021spring-hw1\covid.test.csv'   # path of testing data
 
     # Load Dataset
-    test_data  = prep_dataloader(TEST_PATH ,mode = 'test' ,batch_size = 1, target_only = False)
+    test_data  = prep_dataloader(TEST_PATH ,mode = 'test' ,batch_size = 1, target_only = True)
 
     # Load Model
     model = Net(test_data.dataset.dim).to(device)
@@ -62,7 +62,6 @@ if __name__ == "__main__":
 
     preds = test(test_data, model, device)  # Predict Testing COVID-19 Data
 
-    save_pred(preds, df,'submission')       # Save Prediction file to submission.csv
-#%%
-print(__name__)
+    save_pred(preds, df,'feature15_submission')       # Save Prediction file to submission.csv
+
 # %%
