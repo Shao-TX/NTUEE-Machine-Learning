@@ -1,6 +1,5 @@
 #%%
 # Pytorch
-from operator import index
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
@@ -14,23 +13,30 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 #%%
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
-#%%
 # 畫出學習曲線
 
-def plot_learning_curve(loss_record, title):
+def set_seed():
+    myseed = 45215  # set a random seed for reproducibility
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(myseed)
+    torch.manual_seed(myseed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(myseed)
+
+def plot_learning_curve(loss_record, title=''):
     total_steps = len(loss_record['train'])
     x_1 = range(total_steps)
-    x_2 = x_1[::len(loss_record['train']) // len(loss_record['dev'])] # [0, 27000, 9] => len(loss_record['train']) // len(loss_record['dev']) == 9
+    x_2 = x_1[::len(loss_record['train']) // len(loss_record['valid'])] # Training Data 整筆資料比 Valid Data 還多
     
-    print(len(loss_record['train']))
-    print(len(loss_record['dev']))
+    # train 總資料量 / test 總資料量
+    print('loss_record [train] : ', len(loss_record['train']))
+    print('loss_record [valid] : ', len(loss_record['valid']))
 
     plt.figure(figsize=(6, 4))
     plt.plot(x_1, loss_record['train'], c='tab:red', label='train')
-    plt.plot(x_2, loss_record['dev'], c='tab:cyan', label='dev')
-    plt.ylim(0.0, 5.)
+    plt.plot(x_2, loss_record['valid'], c='tab:cyan', label='valid')
+    plt.ylim(0.0, 10.0) # 因為一開始 error 會很大，必須限制圖表範圍，否則圖像會失真
     plt.xlabel('Training steps')
     plt.ylabel('Loss')
     plt.title('Learning curve of {}'.format(title))
@@ -39,13 +45,13 @@ def plot_learning_curve(loss_record, title):
 
 # 畫出預測曲線
 
-def plot_pred(dv_set, model, device, lim=35., preds=None, targets=None):
+def plot_pred(valid_data, model, device, lim=35., preds=None, targets=None):
     ''' Plot prediction of your DNN '''
     if preds is None or targets is None:
         model.eval()
         preds, targets = [], []
 
-        for data, target in dv_set:
+        for data, target in valid_data:
 
             data = data.to(device)
             target = target.to(device)
@@ -75,9 +81,7 @@ class COVID19Dataset(Dataset):
         data = data.iloc[:, 1:] # 不取編號(第一行)
         data = np.array(data) # Pandas to Numpy
 
-
         feats = list(range(93))
-
 
         if mode == 'test':
             # Testing data
@@ -91,7 +95,7 @@ class COVID19Dataset(Dataset):
             # data: 2700 x 94 (40 states + day 1 (18) + day 2 (18) + day 3 (18))
             target = data[:, -1] # day 3 的 target
             data = data[:, feats] # 2700 x 93
-            
+
             # Splitting training data into train & dev sets
             if mode == 'train':
                 indices = [i for i in range(len(data)) if i % 15 != 0] # 2430 筆
@@ -100,11 +104,11 @@ class COVID19Dataset(Dataset):
 
             self.data = torch.FloatTensor(data[indices]) # Convert data into PyTorch tensors
             self.target = torch.FloatTensor(target[indices])
-
+        print()
         # Normalize : (X - Mean) / Std
         self.data[:, 40:] = (self.data[:, 40:] - self.data[:, 40:].mean(dim=0, keepdim=True)) / self.data[:, 40:].std(dim=0, keepdim=True)
         
-        self.dim = self.data.shape[1]
+        self.dim = self.data.shape[1] # 93 => data = [Number of data, 93]
 
         print('Finished reading the {} set of COVID19 Dataset ({} samples found, each dim = {})'
               .format(mode, len(self.data), self.dim))
@@ -126,23 +130,24 @@ class COVID19Dataset(Dataset):
 #%%
 # DataLoader
 def prep_dataloader(path, mode, batch_size, n_jobs=0, target_only=False):
-    dataset = COVID19Dataset(path, mode=mode, target_only=target_only)  # Construct dataset
+    dataset = COVID19Dataset(path, mode = mode, target_only = target_only)  # Construct dataset
     
     dataloader = DataLoader(
                             dataset, 
                             batch_size,
-                            shuffle=(mode == 'train'), # 如果使用 train 就 True 否則 False
+                            shuffle=(mode == 'train'), # (1) Train : True (2) Vaild & Test : False
                             drop_last=True,
                             num_workers=n_jobs, 
                             pin_memory=True
-                        ) # Construct dataloader
+                        )
     
     return dataloader
 
 #%%
-class Model(nn.Module):
+# Create Neural Networks
+class Net(nn.Module):
     def __init__(self, input_dim):
-        super(Model, self).__init__()
+        super(Net, self).__init__()
 
         self.main = nn.Sequential(
             nn.Linear(input_dim, 128),
@@ -152,73 +157,16 @@ class Model(nn.Module):
         )
 
     def forward(self, x):
-        ''' Given input of size (batch_size x input_dim), compute output of the network '''
         return self.main(x).squeeze(1) # Out = ([270, 1]),  但 Target 為 ([270]) => 需降維(PS:也可.view(-1))
 
-#%%
-# Training
-
-def train(tr_set, dv_set, model, device):
-
-    Epoch = 3000 # Maximum number of epochs
-
-    # Setup optimizer
-    loss_fn = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr = 0.001, weight_decay = 0.01) # 加入 L2 Regulization(必定使 training loss 變差)
-
-    min_mse = 1000
-    loss_record = {'train': [], 'dev': []}        # for recording training loss
-    early_stop_cnt = 0
-    epoch = 0
-
-    for i in range(Epoch):
-        model.train()                             # set model to training mode
-
-        for data, target in tr_set:               # iterate through the dataloader
-
-            data = data.to(device)                # move data to device (cpu/cuda)
-            target = target.to(device)
-
-            optimizer.zero_grad()                 # set gradient to zero
-            pred = model(data)                    # forward pass (compute output)
-            loss = loss_fn(pred, target)          # compute loss
-            loss.backward()                       # compute gradient (backpropagation)
-            optimizer.step()                      # update model with optimizer
-
-            loss_record['train'].append(loss.detach().cpu().item()) 
-            # detach : 阻斷 Backpropagation
-            # cpu : 有些動作需在 cpu 中才能執行(ex : numpy)
-            # item : 取出 torch 中的值
-
-
-        # Validition
-        valid_loss = valid(dv_set, model, device)
-
-        # Early Stop : 比上一筆最小的 loss 還小才存 model
-        if valid_loss < min_mse:
-            min_mse = valid_loss
-            print('Saving model (epoch = {:4d}, loss = {:.4f})'.format(epoch + 1, min_mse))
-            torch.save(model.state_dict(), 'model.pth')  # Save model to specified path
-            early_stop_cnt = 0
-        else:
-            early_stop_cnt += 1
-
-        epoch += 1
-        loss_record['dev'].append(valid_loss)
-        if early_stop_cnt > 200: # 超過 500 次沒有筆前面的 loss 還小就停止 training
-            break
-
-    print('Finished training after {} epochs'.format(epoch))
-    return min_mse, loss_record
 
 #%%
 # Validation
-
-def valid(dv_set, model, device):
+def valid(valid_data, model, device):
     loss_fn = nn.MSELoss()
     model.eval()                                                 # set model to evalutation mode
     total_loss = 0
-    for data, target in dv_set:                                  # iterate through the dataloader
+    for data, target in valid_data:                              # iterate through the dataloader
 
         data = data.to(device)
         target = target.to(device)                               # move data to device (cpu/cuda)
@@ -228,72 +176,104 @@ def valid(dv_set, model, device):
             loss = loss_fn(pred, target)                         # compute loss
         
         total_loss += loss.detach().cpu().item() * len(data)     # accumulate loss
-    total_loss = total_loss / len(dv_set.dataset)                # compute averaged loss
+    total_loss = total_loss / len(valid_data.dataset)            # compute averaged loss
 
     return total_loss
 
 #%%
-# Testing
+# Training
+def train(train_data, valid_data, model, epoch, device, saving_name):
 
-def test(tt_set, model, device):
-    model.eval()                                         # set model to evalutation mode
-    preds = []
-    for x in tt_set:                                     # iterate through the dataloader
+    # Setup Loss Function
+    loss_fn = nn.MSELoss()
 
-        x = x.to(device)                                 # move data to device (cpu/cuda)
+    # Setup Optimizer
+    optimizer = optim.Adam(model.parameters(), lr = 0.001, weight_decay = 0.01) # 加入 L2 Regulization(必定使 training loss 變差)
 
-        with torch.no_grad():                            # disable gradient calculation
-            pred = model(x)                              # forward pass (compute output)
-            preds.append(pred.detach().cpu().numpy().item())   # collect prediction
-    return preds
+    min_loss = 1000 # 初始化最小 loss 
+    loss_record = {'train': [], 'valid': []} # For recording training loss
+    early_stop_cnt = 0
 
+    saving_name = saving_name + '.pth'
+    for i in range(epoch):
+        model.train()                             # set model to training mode
+
+        for data, target in train_data:           # iterate through the dataloader
+
+            data = data.to(device)                # move data to device (cpu/cuda)
+            target = target.to(device)
+
+            optimizer.zero_grad()                 # set gradient to zero
+            pred = model(data)                    # forward pass (compute output)
+            loss = loss_fn(pred, target)          # compute loss
+            loss.backward()                       # compute gradient (backpropagation)
+            optimizer.step()                      # update model with optimizer
+            print(loss)
+            loss_record['train'].append(loss.detach().cpu().item()) 
+            # detach : 阻斷 Backpropagation
+            # cpu : 有些動作需在 cpu 中才能執行(ex : numpy)
+            # item : 取出 torch 中的值
+
+
+        # Validition
+        valid_loss = valid(valid_data, model, device)
+
+        # Early Stop : 比上一次最小的 loss 還小才存 model
+        if valid_loss < min_loss:
+            min_loss = valid_loss # 若小於上一筆最小的 loss 就用此 loss 取代
+            print('Saving model (epoch = {:4d}, loss = {:.4f})'.format(i + 1, min_loss))
+            torch.save(model.state_dict(), saving_name) # 因為 loss 變小了，因此將此 model 存下
+            early_stop_cnt = 0 # 因為 loss 被重置為新的，所以 early stop 步數也重置
+        else:
+            early_stop_cnt += 1
+
+        loss_record['valid'].append(valid_loss)
+        if early_stop_cnt > 200: # 超過 200 次沒有比前面的 loss 還小就停止 training
+            break
+
+    print('Finished training after {} epochs'.format(epoch))
+    return min_loss, loss_record
+    
 #%%
-# Load Dataset
-tr_path = 'ml2021spring-hw1\covid.train.csv'  # path to training data
-tt_path = 'ml2021spring-hw1\covid.test.csv'   # path to testing data
+if __name__ == "__main__" :
+    # Set Random Seed
+    set_seed()
 
-tr_set = prep_dataloader(tr_path, 'train', batch_size = 128, target_only = False)
-dv_set = prep_dataloader(tr_path, 'valid', batch_size = 128, target_only = False)
-tt_set = prep_dataloader(tt_path, 'test',  batch_size = 1, target_only = False)
+    # Use GPU
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-# Load Model
-model = Model(tr_set.dataset.dim).to(device)
-print(model)
+    # Data Path
+    TRAIN_PATH = 'ml2021spring-hw1\covid.train.csv'  # path of training data
+    
+    # Batch Size
+    BATCH_SIZE = 128
 
-#%%
-# Start Training
-model_loss, model_loss_record = train(tr_set, dv_set, model, device)
+    # Epoch
+    EPOCH = 3000
 
-#%%
-plot_learning_curve(model_loss_record, title='deep model')
+    # Load Dataset
+    train_data = prep_dataloader(TRAIN_PATH, mode = 'train', batch_size = BATCH_SIZE, target_only = False)
+    valid_data = prep_dataloader(TRAIN_PATH, mode = 'valid', batch_size = BATCH_SIZE, target_only = False)
 
-#%%
-plot_pred(dv_set, model, device)
-#%%
-# 測試 Testing Data
-# 存成 Kaggle 形式
+    # Load Model
+    model = Net(train_data.dataset.dim).to(device)
+    print(model)
+
+    # Saving Name
+    saving_name = input("Input your model saving name : ")
+
+    # Start Training
+    model_loss, model_loss_record = train(train_data, 
+                                          valid_data, 
+                                          model, 
+                                          epoch = EPOCH, 
+                                          device = device, 
+                                          saving_name = saving_name
+                                          )
 
 
-def save_pred(preds, df, file):
-    ''' Save predictions to specified file '''
-    print('Saving results to {}'.format(file))
-    for i, p in enumerate(preds):
-        i+=1 # Pandas 是從 1 開始(但 i 等於 0)
-        df.loc[i] = [i-1, p]
-
-    df['id'] = df['id'].astype('Int32') # 因為 csv 是由 String 存入，因此需轉成 Int32 才能上傳 Kaggle
-    df.to_csv(file + ".csv",
-            index = False)
-
-#%%
-del model
-model = Model(tt_set.dataset.dim).to(device)
-ckpt = torch.load('model.pth', map_location='cpu')  # Load your best model
-model.load_state_dict(ckpt)
-
-df = pd.DataFrame([], columns = ['id', 'tested_positive'])
-
-preds = test(tt_set, model, device)  # predict COVID-19 cases with your model
-save_pred(preds, df,'submission')         # save prediction file to pred.csv
+    # Plot Laerning Curve & Valid Prediction
+    plot_learning_curve(model_loss_record, title='deep model')
+    plot_pred(valid_data, model, device)
 
 #%%
