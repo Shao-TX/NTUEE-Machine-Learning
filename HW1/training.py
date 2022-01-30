@@ -110,7 +110,7 @@ class COVID19Dataset(Dataset):
             self.target = torch.FloatTensor(target[indices])
         print()
         # Normalize : (X - Mean) / Std
-        self.data[:, 40:] = (self.data[:, 40:] - self.data[:, 40:].mean(dim=0, keepdim=True)) / self.data[:, 40:].std(dim=0, keepdim=True)
+        self.data[:, 40:] = (self.data[:, 40:] - self.data[:, 40:].mean(dim=0, keepdim=True)) / self.data[:, 40:].std(dim=0, keepdim=True) # dim => 0:行運算, 1:列運算
         
         self.dim = self.data.shape[1] # 93 => data = [Number of data, 93]
 
@@ -194,8 +194,8 @@ def train(train_data, valid_data, model, epoch, device, saving_name):
     # Setup Optimizer
     optimizer = optim.Adam(model.parameters(), lr = 0.001, weight_decay = 0.01) # 加入 L2 Regulization(必定使 training loss 變差)
 
-    min_loss = 1000 # 初始化最小 loss 
-    loss_record = {'train': [], 'valid': []} # For recording training loss
+    min_loss = 1000 # 初始化最小 loss
+    loss_record = {'train': [], 'valid': []}      # For recording training loss
     early_stop_cnt = 0
 
     saving_name = saving_name + '.pth'
