@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 
 from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import SelectPercentile
 from sklearn.feature_selection import f_regression
 
 #%%
@@ -16,12 +17,17 @@ data = np.array(data)
 target = np.array(target)
 
 #%%
-New_Data = SelectKBest(score_func = f_regression, k = 75)
-fit = New_Data.fit(data, target)
-dfscores = pd.DataFrame(fit.scores_)
-dfcolumns = pd.DataFrame(data.columns)
+# selector = SelectKBest(score_func = f_regression, k = 75)             # 篩選特定數量
+selector = SelectPercentile(score_func = f_regression, percentile = 80) # 篩選特定比例
+selector.fit(data, target)
 
-featureScores = pd.concat([dfcolumns,dfscores],axis=1)
-featureScores.columns = ['Specs','Score']  #naming the dataframe columns
-print(featureScores.nlargest(75,'Score'))  #print 75 best features
+Scores = selector.scores_
+Pvalues = selector.pvalues_
+
+Feature_Position = selector.get_support(True) # 篩選過的特徵位置
+Feature_Position = Feature_Position.tolist()  # numpy to list
+
 #%%
+print(Feature_Position)
+
+# %%
