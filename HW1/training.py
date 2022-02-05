@@ -85,7 +85,7 @@ class COVID19Dataset(Dataset):
         if not target_only:
             feats = list(range(93))
         else:
-            feats = [75, 57, 42, 60, 78, 43, 61, 79, 40, 58, 76, 41, 59, 77] # Feature Select
+            feats = [40, 41, 42, 43, 57, 58, 59, 60, 61, 75, 76, 77, 78, 79] # Feature Select
 
         if mode == 'test':
             # Testing data
@@ -110,7 +110,7 @@ class COVID19Dataset(Dataset):
             self.target = torch.FloatTensor(target[indices])
         print()
         # Normalize : (X - Mean) / Std
-        self.data[:, :] = (self.data[:, :] - self.data[:, :].mean(dim=0, keepdim=True)) / self.data[:, :].std(dim=0, keepdim=True) # dim => 0:行運算, 1:列運算
+        # self.data[:, :] = (self.data[:, :] - self.data[:, :].mean(dim=0, keepdim=True)) / self.data[:, :].std(dim=0, keepdim=True) # dim => 0:行運算, 1:列運算
         
         self.dim = self.data.shape[1] # 93 => data = [Number of data, 93]
 
