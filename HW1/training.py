@@ -110,7 +110,7 @@ class COVID19Dataset(Dataset):
             self.target = torch.FloatTensor(target[indices])
         print()
         # Normalize : (X - Mean) / Std
-        self.data[:, 40:] = (self.data[:, 40:] - self.data[:, 40:].mean(dim=0, keepdim=True)) / self.data[:, 40:].std(dim=0, keepdim=True) # dim => 0:行運算, 1:列運算
+        self.data[:, :] = (self.data[:, :] - self.data[:, :].mean(dim=0, keepdim=True)) / self.data[:, :].std(dim=0, keepdim=True) # dim => 0:行運算, 1:列運算
         
         self.dim = self.data.shape[1] # 93 => data = [Number of data, 93]
 
