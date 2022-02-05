@@ -17,9 +17,17 @@ data = np.array(data)
 target = np.array(target)
 
 #%%
-# selector = SelectKBest(score_func = f_regression, k = 75)             # 篩選特定數量
-selector = SelectPercentile(score_func = f_regression, percentile = 80) # 篩選特定比例
-selector.fit(data, target)
+
+fn = input("SelectKBest(1) or SelectPercentile(2) : ")
+
+if(fn == "1"):
+    k = int(input("Number of feature : "))
+    selector = SelectKBest(score_func = f_regression, k = k)                     # 篩選特定數量
+elif(fn == "2"):
+    percent = int(input("Percentage of feature : "))
+    selector = SelectPercentile(score_func = f_regression, percentile = percent) # 篩選特定比例
+
+selector.fit(data, target) # 擬和
 
 Scores = selector.scores_
 Pvalues = selector.pvalues_
