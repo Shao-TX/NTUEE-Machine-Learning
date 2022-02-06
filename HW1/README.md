@@ -52,16 +52,17 @@ Use these features to train the model
 
 ## Result : 
 ### Loss : 
-![1](image\Loss.png)
+It doesn't run 3000 epoch because early stop.
+![1](image/Loss.png)
 
 ### Learning Curve : 
-![2](image\LearningCurve.png)
+![2](image/LearningCurve.png)
 
 ### Prediction : 
-![3](image\Prediction.png)
+![3](image/Prediction.png)
 
 ### Kaggle Score : 
-![4](image\KaggleScore.png)
+![4](image/KaggleScore.png)
 | Baseline | Public  | Private |
 |:--------:|:-------:|:-------:|
 |  Strong  | 0.88017 | 0.89266 |
