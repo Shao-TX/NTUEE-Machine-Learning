@@ -53,6 +53,7 @@ Use these features to train the model
 ## Result : 
 ### Loss : 
 It doesn't run 3000 epoch because early stop.
+
 ![1](image/Loss.png)
 
 ### Learning Curve : 
