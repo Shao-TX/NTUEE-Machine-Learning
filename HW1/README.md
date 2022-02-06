@@ -70,7 +70,7 @@ It doesn't run 3000 epoch because early stop.
 |  Medium  | 1.28359 | 1.36937 |
 
 ## Conclusion : 
-Feature Selecteion has the best effect among all adjustments. I found it is better without normalization. I think it's because normalization is not added when selecting feature. I will do the test afterwards.
+Feature Selecteion has the best effect among all adjustments. But the interesting thing is taht I found it is better without normalization, it may because normalization is not added when selecting feature. I will do the test afterwards.
 
 ## Reference : 
 * [Lemontree YC : Discussion of Strong Baseline](https://www.kaggle.com/c/ml2021spring-hw1/discussion/264579)
