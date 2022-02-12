@@ -145,9 +145,12 @@ if __name__ == '__main__':
     Set_Seed()
     device = Get_Device()
     
+    # Time Recording
+    total_time = 0
+
     # Hyperparameter
     LR = 0.001
-    EPOCH = 30
+    EPOCH = 5
     BATCH_SIZE = 64
 
     # Load model
@@ -177,8 +180,11 @@ if __name__ == '__main__':
 #%%
     # Starting Training
     for epoch in range(EPOCH):
+        
+        # Start Recording Time
+        time_start = time.time()
+
         model.train()
-        # time
 
         # Initial Loss & Accuracy
         train_loss = 0.0
@@ -217,16 +223,18 @@ if __name__ == '__main__':
                 valid_acc  += (pred_index.cpu() == label.cpu()).sum().item() # 紀錄總共有幾筆資料預測正確 
                 valid_loss += loss.item()
 
+
+
             # Accuracy 是計算每筆資料所以除以 len(train_set)
             # Loss 是每個 Batch 算一次所以除以 len(train_loader)
             print('[{:03d}/{:03d}] Train Acc: {:3.2f} Loss: {:3.6f} | Val Acc: {:3.2f} loss: {:3.6f}'.format(
                 epoch + 1, EPOCH, (train_acc/len(train_set))*100, train_loss/len(train_loader), (valid_acc/len(valid_set))*100, valid_loss/len(valid_loader)))
 
-            # Save Loss Record to list
+            # Save Loss Record to history
             train_loss_record.append((train_loss/len(train_loader)))
             valid_loss_record.append((valid_loss/len(valid_loader)))
 
-            # Save Accuracy Record to list
+            # Save Accuracy Record to history
             train_acc_record.append((train_acc/len(train_set))*100)
             valid_acc_record.append((valid_acc/len(valid_set))*100)
 
@@ -235,6 +243,14 @@ if __name__ == '__main__':
                 min_loss = (valid_loss/len(valid_loader))
                 torch.save(model.state_dict(), 'model.pth')
                 print('Saving model with loss {:.3f}'.format(min_loss)) # 可以改 loss 作為 early_stop
+            
+        time_end = time.time()              # Finish Recording Time
+        time_cost = time_end - time_start   # Time Spent
+        total_time = total_time + time_cost # Total Time
+        
+        print("Each Epoch Cost : {} s".format(time_cost))
+
+print("Total Cost Time : {} s".format(total_time))
 
 
 #%%
