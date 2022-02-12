@@ -124,6 +124,7 @@ class Net(nn.Module):
 
         x = self.layer2(x)
         x = self.BN2(x)
+        x = self.dropout(x)
         x = self.act_fn_2(x)
 
         x = self.layer3(x)
@@ -144,9 +145,6 @@ if __name__ == '__main__':
     Set_Seed()
     device = Get_Device()
     
-    # Normal Parameter
-
-
     # Hyperparameter
     LR = 0.001
     EPOCH = 30
@@ -166,11 +164,9 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, shuffle=True)
     valid_loader = DataLoader(valid_set, batch_size=BATCH_SIZE, shuffle=False)
 
-    # Initial Loss Record
+    # Initial Loss Record & Accuracy Record
     train_loss_record = []
     valid_loss_record = []
-
-    # Initial Accuracy Record
     train_acc_record = []
     valid_acc_record = []    
 
@@ -184,11 +180,12 @@ if __name__ == '__main__':
         model.train()
         # time
 
-        # Initial Accuracy & Loss
-        train_acc = 0.0
+        # Initial Loss & Accuracy
         train_loss = 0.0
-        valid_acc = 0.0
         valid_loss = 0.0
+        train_acc = 0.0
+        valid_acc = 0.0
+
 
         # Train : 
         for i, (data, label) in enumerate(train_loader):
@@ -242,9 +239,9 @@ if __name__ == '__main__':
 
 #%%
 # Plot the loss history
-plot_learning_curve(train_loss_record, valid_loss_record, EPOCH, title='Loss')
+plot_learning_curve(train_loss_record, valid_loss_record, epoch=EPOCH, title='Loss')
 
 # Plot the accuracy history
-plot_learning_curve(train_acc_record, valid_acc_record, EPOCH, title='Accuracy')
+plot_learning_curve(train_acc_record, valid_acc_record, epoch=EPOCH, title='Accuracy')
 
 #%%
