@@ -46,7 +46,7 @@ def plot_learning_curve(train_record, valid_record, epoch, title=''):
     plt.xlabel('Epoch')
     plt.ylabel(title)
 
-    plt.xticks(epoch_len) # X 軸刻度
+    plt.xticks(epoch_len[::5]) # X 軸刻度
 
     plt.title('Learning Curve')
     plt.legend()
@@ -117,10 +117,9 @@ class Net(nn.Module):
         self.dropout  = nn.Dropout(p = 0.5) 
 
     def forward(self, x):
-        x = self.dropout(x)
-
         x = self.layer1(x)
         x = self.BN1(x)
+        x = self.dropout(x)
         x = self.act_fn_2(x)
 
         x = self.layer2(x)
@@ -150,7 +149,7 @@ if __name__ == '__main__':
 
     # Hyperparameter
     LR = 0.001
-    EPOCH = 20
+    EPOCH = 30
     BATCH_SIZE = 64
 
     # Load model
@@ -243,9 +242,9 @@ if __name__ == '__main__':
 
 #%%
 # Plot the loss history
-plot_learning_curve(train_loss_record, valid_loss_record, 60, title='Loss')
+plot_learning_curve(train_loss_record, valid_loss_record, EPOCH, title='Loss')
 
 # Plot the accuracy history
-plot_learning_curve(train_acc_record, valid_acc_record, 60, title='Accuracy')
+plot_learning_curve(train_acc_record, valid_acc_record, EPOCH, title='Accuracy')
 
 #%%
