@@ -100,30 +100,32 @@ class TIMITDataset(Dataset):
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.layer1  = nn.Linear(429 , 1024)
-        self.layer2  = nn.Linear(1024, 512)
-        self.layer3  = nn.Linear(512 , 128)
-        self.out     = nn.Linear(128 , 39)
+        self.layer1   = nn.Linear(429 , 1024)
+        self.layer2   = nn.Linear(1024, 512)
+        self.layer3   = nn.Linear(512 , 128)
+        self.out      = nn.Linear(128 , 39)
 
-        self.BN1     = nn.BatchNorm1d(1024)
-        self.BN2     = nn.BatchNorm1d(512)
-        self.BN3     = nn.BatchNorm1d(128)
+        self.act_fn_1 = nn.Sigmoid()
+        self.act_fn_2 = nn.ReLU()
 
-        self.dropout = nn.Dropout(p = 0.5) 
-        self.act_fn  = nn.Sigmoid()
+        self.BN1      = nn.BatchNorm1d(1024)
+        self.BN2      = nn.BatchNorm1d(512)
+        self.BN3      = nn.BatchNorm1d(128)
+
+        self.dropout  = nn.Dropout(p = 0.5) 
 
     def forward(self, x):
         x = self.layer1(x)
         x = self.BN1(x)
-        x = self.act_fn(x)
+        x = self.act_fn_2(x)
 
         x = self.layer2(x)
         x = self.BN2(x)
-        x = self.act_fn(x)
+        x = self.act_fn_2(x)
 
         x = self.layer3(x)
         x = self.BN3(x)
-        x = self.act_fn(x)
+        x = self.act_fn_2(x)
 
         x = self.out(x)
 
@@ -169,6 +171,7 @@ if __name__ == '__main__':
     best_acc = 0.0
     min_loss = 1000
 
+#%%
     # Starting Training
     for epoch in range(EPOCH):
         model.train()
