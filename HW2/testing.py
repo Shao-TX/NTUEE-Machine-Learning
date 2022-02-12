@@ -111,7 +111,7 @@ if __name__ == "__main__":
     test_data = scaler.transform(test_data)
 
     test_set = TIMITDataset(test_data, None, test_mode=True)
-    test_loader = DataLoader(test_set, batch_size=1, shuffle=False)
+    test_loader = DataLoader(test_set, batch_size=64, shuffle=False)
 
 #%%
     # Load Model
@@ -130,7 +130,10 @@ if __name__ == "__main__":
             pred = model(data)
 
             _, test_pred = torch.max(pred, 1)
-            preds.append(test_pred.detach().cpu().numpy().item())
+            
+            # preds.append(test_pred.detach().cpu().numpy().item())
+            for i in test_pred.cpu().numpy():
+                preds.append(i)
 
 #%%
     with open(save_path, 'w') as f:
