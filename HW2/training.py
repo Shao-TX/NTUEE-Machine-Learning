@@ -102,7 +102,8 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.layer1   = nn.Linear(429 , 1024)
         self.layer2   = nn.Linear(1024, 512)
-        self.layer3   = nn.Linear(512 , 128)
+        self.layer3   = nn.Linear(512 , 256)
+        self.layer4   = nn.Linear(256 , 128)
         self.out      = nn.Linear(128 , 39)
 
         self.act_fn_1 = nn.Sigmoid()
@@ -110,11 +111,14 @@ class Net(nn.Module):
 
         self.BN1      = nn.BatchNorm1d(1024)
         self.BN2      = nn.BatchNorm1d(512)
-        self.BN3      = nn.BatchNorm1d(128)
+        self.BN3      = nn.BatchNorm1d(256)
+        self.BN4      = nn.BatchNorm1d(128)
 
         self.dropout  = nn.Dropout(p = 0.5) 
 
     def forward(self, x):
+        x = self.dropout(x)
+
         x = self.layer1(x)
         x = self.BN1(x)
         x = self.act_fn_2(x)
@@ -125,6 +129,10 @@ class Net(nn.Module):
 
         x = self.layer3(x)
         x = self.BN3(x)
+        x = self.act_fn_2(x)
+
+        x = self.layer4(x)
+        x = self.BN4(x)
         x = self.act_fn_2(x)
 
         x = self.out(x)
@@ -150,7 +158,7 @@ if __name__ == '__main__':
 
     # Loss & Optimizer function
     loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+    optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay = 0)
 
     # Load Dataset
     train_set = TIMITDataset(X_train, y_train)
@@ -235,9 +243,9 @@ if __name__ == '__main__':
 
 #%%
 # Plot the loss history
-plot_learning_curve(train_loss_record, valid_loss_record, EPOCH, title='Loss')
+plot_learning_curve(train_loss_record, valid_loss_record, 60, title='Loss')
 
 # Plot the accuracy history
-plot_learning_curve(train_acc_record, valid_acc_record, EPOCH, title='Accuracy')
+plot_learning_curve(train_acc_record, valid_acc_record, 60, title='Accuracy')
 
 #%%
