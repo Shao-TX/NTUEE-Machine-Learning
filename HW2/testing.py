@@ -3,7 +3,6 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
-import torch.optim as optim
 
 # Data Preprocess
 import numpy as np
@@ -48,30 +47,32 @@ class TIMITDataset(Dataset):
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.layer1  = nn.Linear(429 , 1024)
-        self.layer2  = nn.Linear(1024, 512)
-        self.layer3  = nn.Linear(512 , 128)
-        self.out     = nn.Linear(128 , 39)
+        self.layer1   = nn.Linear(429 , 1024)
+        self.layer2   = nn.Linear(1024, 512)
+        self.layer3   = nn.Linear(512 , 128)
+        self.out      = nn.Linear(128 , 39)
 
-        self.BN1     = nn.BatchNorm1d(1024)
-        self.BN2     = nn.BatchNorm1d(512)
-        self.BN3     = nn.BatchNorm1d(128)
+        self.act_fn_1 = nn.Sigmoid()
+        self.act_fn_2 = nn.ReLU()
 
-        self.dropout = nn.Dropout(p = 0.5) 
-        self.act_fn  = nn.Sigmoid()
+        self.BN1      = nn.BatchNorm1d(1024)
+        self.BN2      = nn.BatchNorm1d(512)
+        self.BN3      = nn.BatchNorm1d(128)
+
+        self.dropout  = nn.Dropout(p = 0.5) 
 
     def forward(self, x):
         x = self.layer1(x)
         x = self.BN1(x)
-        x = self.act_fn(x)
+        x = self.act_fn_2(x)
 
         x = self.layer2(x)
         x = self.BN2(x)
-        x = self.act_fn(x)
+        x = self.act_fn_2(x)
 
         x = self.layer3(x)
         x = self.BN3(x)
-        x = self.act_fn(x)
+        x = self.act_fn_2(x)
 
         x = self.out(x)
 
@@ -85,7 +86,7 @@ if __name__ == "__main__":
     # Model Path
     model_name = input("Enter model name")
     model_path = model_name + ".pth"
-    save_path = model_name + "_submission"
+    save_path = model_name + "_submission.csv"
 
     # Load Dataset
     test_data  = np.load(r'ml2021spring-hw2\test_11.npy')
@@ -95,14 +96,13 @@ if __name__ == "__main__":
     test_set = TIMITDataset(test_data, None, test_mode=True)
     test_loader = DataLoader(test_set, batch_size=1, shuffle=False)
 
+#%%
     # Load Model
     model = Net().to(device)
 
     # Load Best Model Weight
     model.load_state_dict(torch.load(model_path))
 
-    # CSV Name
-    df = pd.DataFrame([], columns = ['id', 'Class'])
 
     # Test
     model.eval()
@@ -116,7 +116,7 @@ if __name__ == "__main__":
             preds.append(test_pred.detach().cpu().numpy().item())
 
 #%%
-    with open('prediction.csv', 'w') as f:
+    with open(save_path, 'w') as f:
         f.write('Id,Class\n')
         for i, y in enumerate(preds):
             f.write('{},{}\n'.format(i, y))
