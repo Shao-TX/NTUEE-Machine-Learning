@@ -4,27 +4,13 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
-#
+# tqdm
 from tqdm import tqdm
 
 # Data Preprocess
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-
-#%%
-# 存成 Kaggle 形式
-def save_pred(preds, df, file):
-    ''' Save predictions to specified file '''
-    print('Saving results to {}'.format(file))
-    for i, p in enumerate(preds):
-        i+=1 # Pandas 是從 1 開始(但 i 等於 0)
-        df.loc[i] = [i-1, p]
-        print("test")
-
-    df['id'] = df['id'].astype('Int32') # 因為 csv 是由 String 存入，因此需轉成 Int32 才能上傳 Kaggle
-    df.to_csv(file + ".csv",
-            index = False)
 
 #%%
 class TIMITDataset(Dataset):
@@ -46,7 +32,6 @@ class TIMITDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
-#%%
 #%%
 class TIMITDataset(Dataset):
     def __init__(self, x, y, test_mode=False):
@@ -88,14 +73,14 @@ class Net(nn.Module):
         self.dropout  = nn.Dropout(p = 0.5) 
 
     def forward(self, x):
-        x = self.dropout(x)
-
         x = self.layer1(x)
         x = self.BN1(x)
+        x = self.dropout(x)
         x = self.act_fn_2(x)
 
         x = self.layer2(x)
         x = self.BN2(x)
+        x = self.dropout(x)
         x = self.act_fn_2(x)
 
         x = self.layer3(x)
