@@ -85,10 +85,12 @@ class Net(nn.Module):
 
         x = self.layer3(x)
         x = self.BN3(x)
+        x = self.dropout(x)
         x = self.act_fn_2(x)
 
         x = self.layer4(x)
         x = self.BN4(x)
+        # x = self.dropout(x)
         x = self.act_fn_2(x)
 
         x = self.out(x)
@@ -130,7 +132,7 @@ if __name__ == "__main__":
             pred = model(data)
 
             _, test_pred = torch.max(pred, 1)
-            
+
             # preds.append(test_pred.detach().cpu().numpy().item())
             for i in test_pred.cpu().numpy():
                 preds.append(i)
