@@ -100,19 +100,23 @@ class TIMITDataset(Dataset):
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.layer1   = nn.Linear(429 , 1024)
-        self.layer2   = nn.Linear(1024, 512)
-        self.layer3   = nn.Linear(512 , 256)
-        self.layer4   = nn.Linear(256 , 128)
-        self.out      = nn.Linear(128 , 39)
+        self.layer1   = nn.Linear(429 , 2048)
+        self.layer2   = nn.Linear(2048 , 1024)
+        self.layer3   = nn.Linear(1024, 512)
+        self.layer4   = nn.Linear(512 , 256)
+        self.layer5   = nn.Linear(256 , 128)
+        self.layer6   = nn.Linear(128 , 64)
+        self.out      = nn.Linear(64 , 39)
 
         self.act_fn_1 = nn.Sigmoid()
         self.act_fn_2 = nn.ReLU()
 
-        self.BN1      = nn.BatchNorm1d(1024)
-        self.BN2      = nn.BatchNorm1d(512)
-        self.BN3      = nn.BatchNorm1d(256)
-        self.BN4      = nn.BatchNorm1d(128)
+        self.BN1      = nn.BatchNorm1d(2048)
+        self.BN2      = nn.BatchNorm1d(1024)
+        self.BN3      = nn.BatchNorm1d(512)
+        self.BN4      = nn.BatchNorm1d(256)
+        self.BN5      = nn.BatchNorm1d(128)
+        self.BN6      = nn.BatchNorm1d(64)
 
         self.dropout  = nn.Dropout(p = 0.5) 
 
@@ -135,6 +139,14 @@ class Net(nn.Module):
         x = self.BN4(x)
         x = self.act_fn_2(x)
 
+        x = self.layer5(x)
+        x = self.BN5(x)
+        x = self.act_fn_2(x)
+
+        x = self.layer6(x)
+        x = self.BN6(x)
+        x = self.act_fn_2(x)
+
         x = self.out(x)
 
         return x
@@ -150,7 +162,7 @@ if __name__ == '__main__':
 
     # Hyperparameter
     LR = 0.001
-    EPOCH = 5
+    EPOCH = 100
     BATCH_SIZE = 64
 
     # Load model
@@ -171,7 +183,7 @@ if __name__ == '__main__':
     train_loss_record = []
     valid_loss_record = []
     train_acc_record = []
-    valid_acc_record = []    
+    valid_acc_record = []
 
     # Early Stop Parameter
     best_acc = 0.0
@@ -180,7 +192,7 @@ if __name__ == '__main__':
 #%%
     # Starting Training
     for epoch in range(EPOCH):
-        
+
         # Start Recording Time
         time_start = time.time()
 
@@ -248,7 +260,7 @@ if __name__ == '__main__':
         time_cost = time_end - time_start   # Time Spent
         total_time = total_time + time_cost # Total Time
         
-        print("Each Epoch Cost : {} s".format(time_cost))
+        print("Each Epoch Cost : {} s\n".format(time_cost))
 
 print("Total Cost Time : {} s".format(total_time))
 
