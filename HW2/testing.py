@@ -56,19 +56,23 @@ class TIMITDataset(Dataset):
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.layer1   = nn.Linear(429 , 1024)
-        self.layer2   = nn.Linear(1024, 512)
-        self.layer3   = nn.Linear(512 , 256)
-        self.layer4   = nn.Linear(256 , 128)
-        self.out      = nn.Linear(128 , 39)
+        self.layer1   = nn.Linear(429 , 2048)
+        self.layer2   = nn.Linear(2048 , 1024)
+        self.layer3   = nn.Linear(1024, 512)
+        self.layer4   = nn.Linear(512 , 256)
+        self.layer5   = nn.Linear(256 , 128)
+        self.layer6   = nn.Linear(128 , 64)
+        self.out      = nn.Linear(64 , 39)
 
         self.act_fn_1 = nn.Sigmoid()
         self.act_fn_2 = nn.ReLU()
 
-        self.BN1      = nn.BatchNorm1d(1024)
-        self.BN2      = nn.BatchNorm1d(512)
-        self.BN3      = nn.BatchNorm1d(256)
-        self.BN4      = nn.BatchNorm1d(128)
+        self.BN1      = nn.BatchNorm1d(2048)
+        self.BN2      = nn.BatchNorm1d(1024)
+        self.BN3      = nn.BatchNorm1d(512)
+        self.BN4      = nn.BatchNorm1d(256)
+        self.BN5      = nn.BatchNorm1d(128)
+        self.BN6      = nn.BatchNorm1d(64)
 
         self.dropout  = nn.Dropout(p = 0.5) 
 
@@ -85,12 +89,18 @@ class Net(nn.Module):
 
         x = self.layer3(x)
         x = self.BN3(x)
-        x = self.dropout(x)
         x = self.act_fn_2(x)
 
         x = self.layer4(x)
         x = self.BN4(x)
-        # x = self.dropout(x)
+        x = self.act_fn_2(x)
+
+        x = self.layer5(x)
+        x = self.BN5(x)
+        x = self.act_fn_2(x)
+
+        x = self.layer6(x)
+        x = self.BN6(x)
         x = self.act_fn_2(x)
 
         x = self.out(x)
@@ -123,7 +133,7 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load(model_path))
 
 
-    # Test
+    # Test : 
     model.eval()
     preds = []
     with torch.no_grad(): 
