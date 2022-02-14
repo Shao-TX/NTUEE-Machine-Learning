@@ -216,8 +216,8 @@ if __name__ == "__main__":
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     # Model Path
-    model_1_path = r"ensemble_model\model_1.pth" # Valid Loss : 0.712 | Public Score : 0.73703 mio
-    model_6_path = r"ensemble_model\model_6.pth" # Valid Loss : 0.712 | Public Score : 0.73557
+    model_1_path = r"ensemble_model\model_1.pth" # Valid Loss : 0.712 | Public Score : 0.73703
+    model_6_path = r"ensemble_model\model_6.pth" # Valid Loss : 0.492 | Public Score : 0.74745
     model_3_path = r"ensemble_model\model_3.pth" # Valid Loss : 0.547 | Public Score : 0.74603
 
     # Submission Path
