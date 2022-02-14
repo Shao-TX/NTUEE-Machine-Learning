@@ -33,27 +33,6 @@ class TIMITDataset(Dataset):
         return len(self.data)
 
 #%%
-class TIMITDataset(Dataset):
-    def __init__(self, x, y, test_mode=False):
-        self.test_mode = test_mode
-
-        if(self.test_mode == False):
-            self.data  = torch.FloatTensor(x)
-            self.label = torch.LongTensor(y) # Beacuse CrossEntropy need Long type
-        else:
-            self.data  = torch.FloatTensor(x)
-    
-    def __getitem__(self, index):
-        if(self.test_mode == False):
-            return self.data[index], self.label[index]
-        else:
-            return self.data[index]
-    
-    def __len__(self):
-        return len(self.data)
-
-#%%
-#%%
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
