@@ -22,11 +22,12 @@
 
 
 ## Result : 
+* 此為 model_6 的結果，圖片沒設定好 XD，這裡應該是 250 個 Epoch
 ### Loss : 
-![1](image\Loss.png)
+![1](image/Loss.png)
 
 ### Accuracy : 
-![2](image\Accuracy.png)
+![2](image/Accuracy.png)
 
 ### Kaggle Score : 
 
