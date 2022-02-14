@@ -53,6 +53,7 @@ class TIMITDataset(Dataset):
         return len(self.data)
 
 #%%
+#%%
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -66,6 +67,7 @@ class Net(nn.Module):
 
         self.act_fn_1 = nn.Sigmoid()
         self.act_fn_2 = nn.ReLU()
+        self.act_fn_3 = nn.LeakyReLU()
 
         self.BN1      = nn.BatchNorm1d(2048)
         self.BN2      = nn.BatchNorm1d(1024)
@@ -80,28 +82,28 @@ class Net(nn.Module):
         x = self.layer1(x)
         x = self.BN1(x)
         x = self.dropout(x)
-        x = self.act_fn_2(x)
+        x = self.act_fn_3(x)
 
         x = self.layer2(x)
         x = self.BN2(x)
         x = self.dropout(x)
-        x = self.act_fn_2(x)
+        x = self.act_fn_3(x)
 
         x = self.layer3(x)
         x = self.BN3(x)
-        x = self.act_fn_2(x)
+        x = self.act_fn_3(x)
 
         x = self.layer4(x)
         x = self.BN4(x)
-        x = self.act_fn_2(x)
+        x = self.act_fn_3(x)
 
         x = self.layer5(x)
         x = self.BN5(x)
-        x = self.act_fn_2(x)
+        x = self.act_fn_3(x)
 
         x = self.layer6(x)
         x = self.BN6(x)
-        x = self.act_fn_2(x)
+        x = self.act_fn_3(x)
 
         x = self.out(x)
 
