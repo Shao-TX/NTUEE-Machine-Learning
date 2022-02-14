@@ -102,11 +102,10 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.layer1   = nn.Linear(429 , 2048)
         self.layer2   = nn.Linear(2048 , 1024)
-        self.layer3   = nn.Linear(1024 , 512)
-        self.layer4   = nn.Linear(512 , 512)
-        self.layer5   = nn.Linear(512 , 256)
-        self.layer6   = nn.Linear(256 , 128)
-        self.layer7   = nn.Linear(128 , 64)
+        self.layer3   = nn.Linear(1024, 512)
+        self.layer4   = nn.Linear(512 , 256)
+        self.layer5   = nn.Linear(256 , 128)
+        self.layer6   = nn.Linear(128 , 64)
         self.out      = nn.Linear(64 , 39)
 
         self.act_fn_1 = nn.Sigmoid()
@@ -135,22 +134,17 @@ class Net(nn.Module):
 
         x = self.layer3(x)
         x = self.BN3(x)
-        x = self.dropout(x)
         x = self.act_fn_3(x)
 
         x = self.layer4(x)
-        x = self.BN3(x)
-        x = self.act_fn_3(x)
-
-        x = self.layer5(x)
         x = self.BN4(x)
         x = self.act_fn_3(x)
 
-        x = self.layer6(x)
+        x = self.layer5(x)
         x = self.BN5(x)
         x = self.act_fn_3(x)
 
-        x = self.layer7(x)
+        x = self.layer6(x)
         x = self.BN6(x)
         x = self.act_fn_3(x)
 
@@ -274,9 +268,9 @@ print("Total Cost Time : {} s".format(total_time))
 
 #%%
 # Plot the loss history
-plot_learning_curve(train_loss_record, valid_loss_record, epoch=100, title='Loss')
+plot_learning_curve(train_loss_record, valid_loss_record, epoch=EPOCH, title='Loss')
 
 # Plot the accuracy history
-plot_learning_curve(train_acc_record, valid_acc_record, epoch=100, title='Accuracy')
+plot_learning_curve(train_acc_record, valid_acc_record, epoch=EPOCH, title='Accuracy')
 
 #%%
