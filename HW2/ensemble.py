@@ -101,22 +101,27 @@ class Net1(nn.Module):
 
         return x
 
-class Net2(nn.Module):
+class Net6(nn.Module):
     def __init__(self):
-        super(Net2, self).__init__()
-        self.layer1   = nn.Linear(429 , 1024)
-        self.layer2   = nn.Linear(1024, 512)
-        self.layer3   = nn.Linear(512 , 256)
-        self.layer4   = nn.Linear(256 , 128)
-        self.out      = nn.Linear(128 , 39)
+        super(Net6, self).__init__()
+        self.layer1   = nn.Linear(429 , 2048)
+        self.layer2   = nn.Linear(2048 , 1024)
+        self.layer3   = nn.Linear(1024, 512)
+        self.layer4   = nn.Linear(512 , 256)
+        self.layer5   = nn.Linear(256 , 128)
+        self.layer6   = nn.Linear(128 , 64)
+        self.out      = nn.Linear(64 , 39)
 
         self.act_fn_1 = nn.Sigmoid()
         self.act_fn_2 = nn.ReLU()
+        self.act_fn_3 = nn.LeakyReLU()
 
-        self.BN1      = nn.BatchNorm1d(1024)
-        self.BN2      = nn.BatchNorm1d(512)
-        self.BN3      = nn.BatchNorm1d(256)
-        self.BN4      = nn.BatchNorm1d(128)
+        self.BN1      = nn.BatchNorm1d(2048)
+        self.BN2      = nn.BatchNorm1d(1024)
+        self.BN3      = nn.BatchNorm1d(512)
+        self.BN4      = nn.BatchNorm1d(256)
+        self.BN5      = nn.BatchNorm1d(128)
+        self.BN6      = nn.BatchNorm1d(64)
 
         self.dropout  = nn.Dropout(p = 0.5) 
 
@@ -124,26 +129,33 @@ class Net2(nn.Module):
         x = self.layer1(x)
         x = self.BN1(x)
         x = self.dropout(x)
-        x = self.act_fn_2(x)
+        x = self.act_fn_3(x)
 
         x = self.layer2(x)
         x = self.BN2(x)
         x = self.dropout(x)
-        x = self.act_fn_2(x)
+        x = self.act_fn_3(x)
 
         x = self.layer3(x)
         x = self.BN3(x)
-        x = self.act_fn_2(x)
+        x = self.act_fn_3(x)
 
         x = self.layer4(x)
         x = self.BN4(x)
-        x = self.act_fn_2(x)
+        x = self.act_fn_3(x)
+
+        x = self.layer5(x)
+        x = self.BN5(x)
+        x = self.act_fn_3(x)
+
+        x = self.layer6(x)
+        x = self.BN6(x)
+        x = self.act_fn_3(x)
 
         x = self.out(x)
 
         return x
 
-#%%
 class Net3(nn.Module):
     def __init__(self):
         super(Net3, self).__init__()
@@ -204,8 +216,8 @@ if __name__ == "__main__":
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     # Model Path
-    model_1_path = r"ensemble_model\model_1.pth" # Valid Loss : 0.712 | Public Score : 0.73703
-    model_2_path = r"ensemble_model\model_2.pth" # Valid Loss : 0.712 | Public Score : 0.73557
+    model_1_path = r"ensemble_model\model_1.pth" # Valid Loss : 0.712 | Public Score : 0.73703 mio
+    model_6_path = r"ensemble_model\model_6.pth" # Valid Loss : 0.712 | Public Score : 0.73557
     model_3_path = r"ensemble_model\model_3.pth" # Valid Loss : 0.547 | Public Score : 0.74603
 
     # Submission Path
@@ -223,8 +235,8 @@ if __name__ == "__main__":
     model_1 = Net1().to(device)
     model_1.load_state_dict(torch.load(model_1_path))
 
-    model_2 = Net2().to(device)
-    model_2.load_state_dict(torch.load(model_2_path))
+    model_2 = Net6().to(device)
+    model_2.load_state_dict(torch.load(model_6_path))
 
     model_3 = Net3().to(device)
     model_3.load_state_dict(torch.load(model_3_path))
