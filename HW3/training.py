@@ -15,8 +15,8 @@ from tqdm import tqdm
 import time
 
 #%%
-IMAGE_SIZE = 128
-BATCH_SIZE = 64
+IMAGE_SIZE = 224
+BATCH_SIZE = 128
 
 #%%
 def Get_Device():
@@ -67,13 +67,13 @@ train_transform = transforms.Compose([
                                       
                                       transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
                                       transforms.ToTensor(),
-                                    #   transforms.Normalize((0.5, 0.5 ,0.5), (0.5, 0.5 ,0.5))
+                                      transforms.Normalize((0.5, 0.5 ,0.5), (0.5, 0.5 ,0.5))
                                       ])
 
 valid_transform = transforms.Compose([
                                       transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
                                       transforms.ToTensor(),
-                                    #   transforms.Normalize((0.5, 0.5 ,0.5), (0.5, 0.5 ,0.5))
+                                      transforms.Normalize((0.5, 0.5 ,0.5), (0.5, 0.5 ,0.5))
                                       ])
 
 train_set = ImageFolder(root = r"ml2021spring-hw3\food-11\training\labeled", transform = train_transform)
@@ -198,17 +198,19 @@ if __name__ == "__main__":
     total_time = 0
 
     # Hyperparameter
-    # LR = 0.000008
-    LR = 0.0003
-    EPOCH = 10
+    LR = 0.00001
+    EPOCH = 250
 
     # Load model
+    # model_path = r'model/resnet18_epc50_Normal.pth'
+
     model = torchvision.models.resnet18(pretrained=False)
     model.fc = nn.Linear(512, 11)
+    # model.load_state_dict(torch.load(model_path))
     model.to(device)
 
     summary(model, (3, IMAGE_SIZE, IMAGE_SIZE))
-#%%
+
     # Loss & Optimizer function
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay = 1e-5)
@@ -219,12 +221,12 @@ if __name__ == "__main__":
     train_acc_record = []
     valid_acc_record = []
 
-    # Semi #
+    # Semi
     do_semi = True
 
-    # Early Stop Parameter
-    min_loss = 1000
-    valid_avg_acc = 0
+    # Initial Some Value
+    min_loss = 1000      # 用於判定是否該存 model
+    valid_avg_acc = 0    # 用於判定是否該啟用 Semi-Supervised Learning
 
     # Start Training
     for epoch in range(EPOCH):
@@ -238,8 +240,8 @@ if __name__ == "__main__":
         train_acc  = 0.0
         valid_acc  = 0.0
 
-        # 當 Valid Accuracy > 70% 時才加入 Unlabeled Data
-        if(do_semi and (valid_avg_acc > 70)):
+        # 當 Valid Accuracy > 65% 時才加入 Unlabeled Data
+        if(do_semi and (valid_avg_acc > 60)):
             # Obtain pseudo-labels for unlabeled data using trained model.
             pseudo_set = get_pseudo_labels(semi_set, model, BATCH_SIZE, device)
 
