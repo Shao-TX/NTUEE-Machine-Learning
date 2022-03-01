@@ -14,8 +14,8 @@ from tqdm import tqdm
 import time
 
 #%%
-IMAGE_SIZE = 128
-BATCH_SIZE = 128
+IMAGE_SIZE = 224
+BATCH_SIZE = 64
 
 #%%
 def Get_Device():
@@ -109,7 +109,7 @@ test_loader = DataLoader(test_set, batch_size = BATCH_SIZE)
 device = Get_Device()
 
 # Load model
-model_path = r'model/resnet18_epc50.pth'
+model_path = r'model/resnet18_epc100_Normal.pth'
 
 model = torchvision.models.resnet18(pretrained=False)
 model.fc = nn.Linear(512, 11)
