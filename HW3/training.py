@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 
+import torchvision
 from torch.utils.data import DataLoader, ConcatDataset, Subset, Dataset
 from torchvision.datasets import ImageFolder
 from torchsummary import summary
@@ -83,68 +84,68 @@ train_loader = DataLoader(train_set, batch_size = BATCH_SIZE, shuffle=True, pin_
 valid_loader = DataLoader(valid_set, batch_size = BATCH_SIZE, shuffle=False, pin_memory=True)
 
 #%%
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
+# class Net(nn.Module):
+#     def __init__(self):
+#         super(Net, self).__init__()
 
-        # (in_channels, out_channels, kernel_size, stride, padding)
-        self.cnn_layer = nn.Sequential(
-            nn.Conv2d(3, 64, 3, 1, 1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0), # 224 -> 112
+#         # (in_channels, out_channels, kernel_size, stride, padding)
+#         self.cnn_layer = nn.Sequential(
+#             nn.Conv2d(3, 64, 3, 1, 1),
+#             nn.BatchNorm2d(64),
+#             nn.ReLU(),
+#             nn.MaxPool2d(2, 2, 0), # 224 -> 112
 
-            nn.Conv2d(64, 128, 3, 1, 1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0), # 112 -> 56
+#             nn.Conv2d(64, 128, 3, 1, 1),
+#             nn.BatchNorm2d(128),
+#             nn.ReLU(),
+#             nn.MaxPool2d(2, 2, 0), # 112 -> 56
 
-            nn.Conv2d(128, 256, 3, 1, 1),
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0), # 56 -> 28
+#             nn.Conv2d(128, 256, 3, 1, 1),
+#             nn.BatchNorm2d(256),
+#             nn.ReLU(),
+#             nn.MaxPool2d(2, 2, 0), # 56 -> 28
 
-            nn.Conv2d(256, 512, 3, 1, 1),
-            nn.BatchNorm2d(512),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0), # 28 -> 14
+#             nn.Conv2d(256, 512, 3, 1, 1),
+#             nn.BatchNorm2d(512),
+#             nn.ReLU(),
+#             nn.MaxPool2d(2, 2, 0), # 28 -> 14
 
-            nn.Conv2d(512, 512, 3, 1, 1),
-            nn.BatchNorm2d(512),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0), # 28 -> 14
-        )
+#             nn.Conv2d(512, 512, 3, 1, 1),
+#             nn.BatchNorm2d(512),
+#             nn.ReLU(),
+#             nn.MaxPool2d(2, 2, 0), # 28 -> 14
+#         )
 
-        self.fc_layers = nn.Sequential(
-            nn.Linear(512 * 4 * 4, 1024),
-            nn.BatchNorm1d(1024),
-            nn.Dropout(0.7),
-            nn.ReLU(),
+#         self.fc_layers = nn.Sequential(
+#             nn.Linear(512 * 4 * 4, 1024),
+#             nn.BatchNorm1d(1024),
+#             nn.Dropout(0.7),
+#             nn.ReLU(),
 
-            nn.Linear(1024, 512),
-            nn.BatchNorm1d(512),
-            nn.Dropout(0.7),
-            nn.ReLU(),
+#             nn.Linear(1024, 512),
+#             nn.BatchNorm1d(512),
+#             nn.Dropout(0.7),
+#             nn.ReLU(),
 
-            # nn.Linear(1000, 1000),
-            # nn.BatchNorm1d(1000),
-            # nn.Dropout(0.5),
-            # nn.ReLU(),
+#             # nn.Linear(1000, 1000),
+#             # nn.BatchNorm1d(1000),
+#             # nn.Dropout(0.5),
+#             # nn.ReLU(),
 
-            nn.Linear(512, 11)
-        )
+#             nn.Linear(512, 11)
+#         )
 
-    def forward(self, x):
-        # CNN Layer
-        x = self.cnn_layer(x)
+#     def forward(self, x):
+#         # CNN Layer
+#         x = self.cnn_layer(x)
         
-        # Flatten
-        x = x.flatten(1)
+#         # Flatten
+#         x = x.flatten(1)
 
-        # Fully Connected Layer
-        x = self.fc_layers(x)
+#         # Fully Connected Layer
+#         x = self.fc_layers(x)
 
-        return x
+#         return x
 
 #%%
 class PseudoDataset(Dataset):
@@ -202,10 +203,12 @@ if __name__ == "__main__":
     EPOCH = 10
 
     # Load model
-    model = Net().to(device)
+    model = torchvision.models.resnet18(pretrained=False)
+    model.fc = nn.Linear(512, 11)
+    model.to(device)
 
-    summary(model, (3, 128, 128))
-
+    summary(model, (3, IMAGE_SIZE, IMAGE_SIZE))
+#%%
     # Loss & Optimizer function
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay = 1e-5)
@@ -235,6 +238,7 @@ if __name__ == "__main__":
         train_acc  = 0.0
         valid_acc  = 0.0
 
+        # 當 Valid Accuracy > 70% 時才加入 Unlabeled Data
         if(do_semi and (valid_avg_acc > 70)):
             # Obtain pseudo-labels for unlabeled data using trained model.
             pseudo_set = get_pseudo_labels(semi_set, model, BATCH_SIZE, device)
