@@ -64,7 +64,7 @@
 1. 因為訓練資料實在是有點少，也就要用到 Training Data 中的 Unlabeled Data 進行訓練，不過這部分的不太好寫，參考了網上的方式改寫了一下。
 2. 我將閥值調至 0.9 並且當 Valid Accuracy > 60% 才加入 Unlabeled Data 訓練，但因為原本訓練集太少所以很難在前期達到 Valid Accuracy > 60%，大約到 epoch = 150 時才開始使用，第一次使用了 1274 筆，訓練到後期最多使用到 4024 筆，Valid Accuracy 最高達到 64%，最後 Private Score 達到 62.701 %。
 
-### 4.問題：
+### 4. 問題：
 Valid Accuracy 大致上到 60% 附近時就已經 Overfitting，沒有再往上升，Valid Loss 也開始不降反升。要再把模型簡化或是進行其他 Data Augmentation。
 
 
