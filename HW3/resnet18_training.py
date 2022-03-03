@@ -15,7 +15,7 @@ from tqdm import tqdm
 import time
 
 #%%
-IMAGE_SIZE = 128
+IMAGE_SIZE = 224
 BATCH_SIZE = 128
 
 #%%
@@ -61,7 +61,7 @@ def plot_learning_curve(train_record, valid_record, epoch, title=''):
 #%%
 train_transform = transforms.Compose([
                                       transforms.ColorJitter(brightness=(0.5, 1.2)),                          # 隨機亮度調整
-                                      transforms.RandomHorizontalFlip(p=0.5),                                 # 隨機水平翻轉
+                                    #   transforms.RandomHorizontalFlip(p=0.5),                                 # 隨機水平翻轉
                                       transforms.RandomRotation((-40, 40)),                                   # 隨機旋轉
                                       transforms.RandomResizedCrop(size = IMAGE_SIZE, scale = (0.5, 1.5)),    # 隨機縮放
                                       
@@ -76,76 +76,12 @@ valid_transform = transforms.Compose([
                                       transforms.Normalize((0.5, 0.5 ,0.5), (0.5, 0.5 ,0.5))
                                       ])
 
-train_set = ImageFolder(root = r"ml2021spring-hw3\food-11\training\labeled", transform = train_transform)
+train_set = ImageFolder(root = r"ml2021spring-hw3\food-11\training\new_labeled", transform = train_transform)
 valid_set = ImageFolder(root = r"ml2021spring-hw3\food-11\validation", transform = valid_transform)
 semi_set  = ImageFolder(root = r"ml2021spring-hw3\food-11\training\unlabeled", transform = valid_transform)
 
 train_loader = DataLoader(train_set, batch_size = BATCH_SIZE, shuffle=True, pin_memory=True)
 valid_loader = DataLoader(valid_set, batch_size = BATCH_SIZE, shuffle=False, pin_memory=True)
-
-#%%
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
-
-        # (in_channels, out_channels, kernel_size, stride, padding)
-        self.cnn_layer = nn.Sequential(
-            nn.Conv2d(3, 64, 3, 1, 1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0), # 224 -> 112
-
-            nn.Conv2d(64, 128, 3, 1, 1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0), # 112 -> 56
-
-            nn.Conv2d(128, 256, 3, 1, 1),
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0), # 56 -> 28
-
-            nn.Conv2d(256, 512, 3, 1, 1),
-            nn.BatchNorm2d(512),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0), # 28 -> 14
-
-            nn.Conv2d(512, 512, 3, 1, 1),
-            nn.BatchNorm2d(512),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0), # 14 -> 7
-        )
-
-        self.fc_layers = nn.Sequential(
-            nn.Linear(512 * 4 * 4, 1024),
-            nn.BatchNorm1d(1024),
-            nn.Dropout(0.7),
-            nn.ReLU(),
-
-            nn.Linear(1024, 512),
-            nn.BatchNorm1d(512),
-            nn.Dropout(0.7),
-            nn.ReLU(),
-
-            # nn.Linear(1000, 1000),
-            # nn.BatchNorm1d(1000),
-            # nn.Dropout(0.5),
-            # nn.ReLU(),
-
-            nn.Linear(512, 11)
-        )
-
-    def forward(self, x):
-        # CNN Layer
-        x = self.cnn_layer(x)
-        
-        # Flatten
-        x = x.flatten(1)
-
-        # Fully Connected Layer
-        x = self.fc_layers(x)
-
-        return x
 
 #%%
 class PseudoDataset(Dataset):
@@ -198,17 +134,12 @@ if __name__ == "__main__":
     total_time = 0
 
     # Hyperparameter
-    LR = 0.00001
+    LR = 1e-5
     EPOCH = 300
 
     # Load model
-    # model_path = r'model/resnet18_epc50_Normal.pth'
-
-    # model = torchvision.models.resnet18(pretrained=False)
-    # model.fc = nn.Linear(512, 11)
-    # model.load_state_dict(torch.load(model_path))
-
-    model = Net()
+    model = torchvision.models.resnet18(pretrained=False)
+    model.fc = nn.Linear(512, 11)
     model.to(device)
 
     summary(model, (3, IMAGE_SIZE, IMAGE_SIZE))
@@ -242,8 +173,8 @@ if __name__ == "__main__":
         train_acc  = 0.0
         valid_acc  = 0.0
 
-        # 當 Valid Accuracy > 65% 時才加入 Unlabeled Data
-        if(do_semi and (valid_avg_acc > 50)):
+        # 當 Valid Accuracy > 60% 時才加入 Unlabeled Data
+        if(do_semi and (valid_avg_acc > 60)):
             # Obtain pseudo-labels for unlabeled data using trained model.
             pseudo_set = get_pseudo_labels(semi_set, model, BATCH_SIZE, device)
 

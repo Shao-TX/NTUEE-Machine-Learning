@@ -39,8 +39,6 @@ test_transform = transforms.Compose([
 test_set = ImageFolder(root = r"ml2021spring-hw3\food-11\testing", transform = test_transform)
 test_loader = DataLoader(test_set, batch_size = BATCH_SIZE)
 
-
-#%%
 #%%
 class Net(nn.Module):
     def __init__(self):
@@ -109,7 +107,7 @@ class Net(nn.Module):
 device = Get_Device()
 
 # Load model
-model_path = r'model/300epoch_model.pth'
+model_path = r'model/model.pth'
 
 # model = torchvision.models.resnet18(pretrained=False)
 # model.fc = nn.Linear(512, 11)
