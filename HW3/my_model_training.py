@@ -93,27 +93,27 @@ class Net(nn.Module):
             nn.Conv2d(3, 64, 3, 1, 1),
             nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0), # 224 -> 112
+            nn.MaxPool2d(2, 2, 0), # 128 -> 64
 
             nn.Conv2d(64, 128, 3, 1, 1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0), # 112 -> 56
+            nn.MaxPool2d(2, 2, 0), # 64 -> 32
 
             nn.Conv2d(128, 256, 3, 1, 1),
             nn.BatchNorm2d(256),
             nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0), # 56 -> 28
+            nn.MaxPool2d(2, 2, 0), # 32 -> 16
 
             nn.Conv2d(256, 512, 3, 1, 1),
             nn.BatchNorm2d(512),
             nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0), # 28 -> 14
+            nn.MaxPool2d(2, 2, 0), # 16 -> 8
 
             nn.Conv2d(512, 512, 3, 1, 1),
             nn.BatchNorm2d(512),
             nn.ReLU(),
-            nn.MaxPool2d(2, 2, 0), # 14 -> 7
+            nn.MaxPool2d(2, 2, 0), # 8 -> 4
         )
 
         self.fc_layers = nn.Sequential(
@@ -236,7 +236,7 @@ if __name__ == "__main__":
         train_acc  = 0.0
         valid_acc  = 0.0
 
-        # 當 Valid Accuracy > 65% 時才加入 Unlabeled Data
+        # 當 Valid Accuracy > 60% 時才加入 Unlabeled Data
         if(do_semi and (valid_avg_acc > 60)):
             # Obtain pseudo-labels for unlabeled data using trained model.
             pseudo_set = get_pseudo_labels(semi_set, model, BATCH_SIZE, device)

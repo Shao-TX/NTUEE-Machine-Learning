@@ -44,7 +44,7 @@ test_loader = DataLoader(test_set, batch_size = BATCH_SIZE)
 device = Get_Device()
 
 # Load model
-model_path = r'model/model.pth'
+model_path = r'model/Resnet18_300epoch.pth'
 
 model = torchvision.models.resnet18(pretrained=False)
 model.fc = nn.Linear(512, 11)
